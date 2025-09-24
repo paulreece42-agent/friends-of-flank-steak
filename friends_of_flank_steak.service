@@ -1,0 +1,11 @@
+[Unit]
+Description=Friends of Flank Steak Updater
+
+[Service]
+Type=oneshot
+Restart=never
+User=root
+ExecStart=/usr/bin/python3 /var/www/html/friendsofflanksteak.com/friends_of_flank_steak.py
+
+[Install]
+WantedBy=multi-user.target

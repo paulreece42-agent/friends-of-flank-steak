@@ -1,8 +1,16 @@
 #!/bin/env python3
 #
 # Run as a cron or somethin:
-# 33 16 * * * root python3 /var/www/html/friendsofflanksteak.com/friends_of_flank_steak.py > /var/www/html/friendsofflanksteak.com/public_html/index.html
 #
+# Systemd timer even better, on RHEL systems:
+#
+# cp -arv friends_of_flank_steak.timer /usr/lib/systemd/system/
+# cp -arv friends_of_flank_steak.service /usr/lib/systemd/system/
+# systemctl daemon-reload
+# systemctl enable --now friends_of_flank_steak.timer
+# systemctl status friends_of_flank_steak.timer
+#
+##
 import requests
 import re
 import datetime

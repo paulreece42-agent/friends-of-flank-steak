@@ -1,0 +1,14 @@
+[Unit]
+Description=Daily timer for friends of flank steak
+
+#
+# My system is set to UTC, so this actually says run between
+# nvm holy wow systemd timers support time zones, dang I love systemd
+#
+[Timer]
+OnCalendar=*-*-* 05:00:00 America/Detroit
+RandomizedDelaySec=2h
+Unit=friends_of_flank_steak.service
+
+[Install]
+WantedBy=default.target
