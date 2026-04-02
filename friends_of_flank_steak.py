@@ -16,10 +16,13 @@ import re
 import datetime
 from jinja2 import Environment, FileSystemLoader
 import os
+import json
 
 allFoodsFilter = re.compile(".*div class=\"meal-title (?P<time>\w+)\">(?P<food>.+)<", re.I)
 winningFoodsFilter = re.compile(".*(steak|brisket|salmon).*", re.I)
 outputFileName = 'public_html/index.html'
+WEBHOOK_URL = os.getenv('MS_TEAMS_URL')
+
 
 diningHalls = [
     {"name": "Brody", "htmlName": "Brody%20Square"},
@@ -44,11 +47,132 @@ def getDiningHall(dh, whatday):
 
     return(winfoods)
 
+def send_menu_to_teams(webhook_url, menu_items):
+    """
+    Sends a dining menu to Teams using a ColumnSet-based table.
+    
+    :param webhook_url: The MS Teams Workflow Webhook URL
+    :param menu_items: List of dicts, e.g., [{"Food": "Item", "Time": "Lunch", "Hall": "Akers"}]
+    """
+    
+    # Helper to generate a standardized row
+    def create_row(col1, col2, col3, is_header=False):
+        weight = "Bolder" if is_header else "Default"
+        # Optional: Add a light gray background to the header row
+        style = "emphasis" if is_header else "default"
+        
+        return {
+            "type": "ColumnSet",
+            "style": style,
+            "columns": [
+                {
+                    "type": "Column",
+                    "width": "stretch",
+                    "items": [{"type": "TextBlock", "text": col1, "weight": weight, "wrap": True}]
+                },
+                {
+                    "type": "Column",
+                    "width": "stretch",
+                    "items": [{"type": "TextBlock", "text": col2, "weight": weight, "wrap": True}]
+                },
+                {
+                    "type": "Column",
+                    "width": "stretch",
+                    "items": [{"type": "TextBlock", "text": col3, "weight": weight, "wrap": True}]
+                }
+            ],
+            "separator": not is_header  # Adds a line between data rows
+        }
+
+    # Build the Card Body starting with Title and Header
+    card_body = [
+        {
+            "type": "TextBlock", 
+            "text": "Good Foods on Campus Today", 
+            "size": "Large", 
+            "weight": "Bolder",
+            "color": "Accent"
+        },
+        create_row("Food", "Time", "Dining Hall", is_header=True)
+    ]
+
+    # Dynamically add rows from the passed argument
+    for item in menu_items:
+        card_body.append(
+            create_row(item.get("food", ""), item.get("time", ""), item.get("dh", ""))
+        )
+
+    # Construct the full Adaptive Card payload
+    payload = {
+        "type": "message",
+        "attachments": [
+            {
+                "contentType": "application/vnd.microsoft.card.adaptive",
+                "content": {
+                    "type": "AdaptiveCard",
+                    "body": card_body,
+                    "$schema": "http://adaptivecards.io",
+                    "version": "1.4"
+                }
+            }
+        ]
+    }
+
+    try:
+        response = requests.post(webhook_url, json=payload)
+        response.raise_for_status()
+        print("Menu successfully posted to Teams!")
+    except requests.exceptions.RequestException as e:
+        print(f"Error posting to Teams: {e}")
+
+
+def send_teams_workflow_message(webhook_url, title, message):
+    # The payload structure for modern "Workflows" typically uses Adaptive Cards
+    payload = {
+        "type": "message",
+        "attachments": [
+            {
+                "contentType": "application/vnd.microsoft.card.adaptive",
+                "content": {
+                    "type": "AdaptiveCard",
+                    "body": [
+                        {
+                            "type": "TextBlock",
+                            "size": "Medium",
+                            "weight": "Bolder",
+                            "text": title
+                        },
+                        {
+                            "type": "TextBlock",
+                            "text": message,
+                            "wrap": True
+                        }
+                    ],
+                    "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+                    "version": "1.4"
+                }
+            }
+        ]
+    }
+
+    try:
+        response = requests.post(
+            webhook_url,
+            data=json.dumps(payload),
+            headers={'Content-Type': 'application/json'}
+        )
+        response.raise_for_status()
+        print("Successfully sent message to Teams!")
+    except requests.exceptions.RequestException as e:
+        print(f"Failed to send message: {e}")
+
+
 def main():
     # make paths relative to where the script is
     mydir = os.path.dirname(__file__)
     env = Environment(loader=FileSystemLoader(os.path.join(mydir, 'public_html/templates')))
     template = env.get_template('index.html')
+    markdown_template = env.get_template('markdown.html')
     today = datetime.datetime.now().strftime("%Y-%m-%d")
     prettyToday = datetime.datetime.now().strftime("%A, the %d of %B, %Y")
     output = []
@@ -61,6 +185,9 @@ def main():
     html_output = template.render({"today": prettyToday, "foods": output})
     with open(os.path.join(mydir, outputFileName), 'w') as f:
         f.write(html_output)
+    markdown_output = markdown_template.render({"today": prettyToday, "foods": output})
+
+    send_menu_to_teams(WEBHOOK_URL, output)
 
 if __name__ == "__main__":
     main()
