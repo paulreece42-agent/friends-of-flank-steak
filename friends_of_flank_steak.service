@@ -5,6 +5,9 @@ Description=Friends of Flank Steak Updater
 Type=oneshot
 Restart=never
 User=root
+# Set your MS Teams Workflow URL here
+# remember to "escape" '%' with '%%' cuz systemd
+#Environment="MS_TEAMS_URL=https://my-ms-teams-url/?%%dammit%%microsoft
 ExecStart=/usr/bin/python3 /var/www/html/friendsofflanksteak.com/friends_of_flank_steak.py
 
 [Install]
