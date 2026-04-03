@@ -18,6 +18,8 @@ from jinja2 import Environment, FileSystemLoader
 import os
 import json
 
+today_idx = datetime.datetime.today().weekday()
+
 allFoodsFilter = re.compile(".*div class=\"meal-title (?P<time>\w+)\">(?P<food>.+)<", re.I)
 winningFoodsFilter = re.compile(".*(steak|brisket|salmon).*", re.I)
 outputFileName = 'public_html/index.html'
@@ -186,8 +188,10 @@ def main():
     with open(os.path.join(mydir, outputFileName), 'w') as f:
         f.write(html_output)
     markdown_output = markdown_template.render({"today": prettyToday, "foods": output})
-
-    send_menu_to_teams(WEBHOOK_URL, output)
+    
+    # on weekdays, post to teams
+    if today_idx >= 4:
+        send_menu_to_teams(WEBHOOK_URL, output)
 
 if __name__ == "__main__":
     main()
