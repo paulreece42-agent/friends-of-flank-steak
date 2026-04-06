@@ -190,7 +190,7 @@ def main():
     markdown_output = markdown_template.render({"today": prettyToday, "foods": output})
     
     # on weekdays, post to teams
-    if today_idx >= 4:
+    if today_idx <= 4:
         send_menu_to_teams(WEBHOOK_URL, output)
 
 if __name__ == "__main__":
