@@ -1,5 +1,10 @@
 #!/bin/env python3
 #
+# Pull MSU dining hall menus from Nutrislice's JSON API (replaces the old
+# eatatstate.msu.edu HTML scraping, which broke when MSU moved to Nutrislice),
+# filter for high-value items, update the static HTML site, and optionally
+# post to MS Teams.
+#
 # Run as a cron or somethin:
 #
 # Systemd timer even better, on RHEL systems:
@@ -10,59 +15,77 @@
 # systemctl enable --now friends_of_flank_steak.timer
 # systemctl status friends_of_flank_steak.timer
 #
+# Env:
+#   MS_TEAMS_URL   MS Teams Workflow webhook URL (optional; posts only if set)
+#
 ##
-import requests
-import re
 import datetime
-from jinja2 import Environment, FileSystemLoader
-import os
 import json
-
+import os
+import re
+import sys
+import requests
+from jinja2 import Environment, FileSystemLoader
 today_idx = datetime.datetime.today().weekday()
-
-allFoodsFilter = re.compile(".*div class=\"meal-title (?P<time>\w+)\">(?P<food>.+)<", re.I)
-winningFoodsFilter = re.compile(".*(steak|brisket|salmon).*", re.I)
-outputFileName = 'public_html/index.html'
+# Case-insensitive filter for high-value items. Override via argv[1].
+winningFoodsFilter = re.compile(r"steak|brisket|salmon|ribs|Carnitas|chops|sirloin|ribeye", re.I)
+mydir = os.path.dirname(os.path.abspath(__file__))
+outputFileName = os.path.join(mydir, 'public_html', 'index.html')
 WEBHOOK_URL = os.getenv('MS_TEAMS_URL')
-
-
+HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
+        "(KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36"
+    ),
+    "Accept": "application/json, text/plain, */*",
+}
+# Nutrislice location slugs (replaces the old htmlName URL-escaped names)
 diningHalls = [
-    {"name": "Brody", "htmlName": "Brody%20Square"},
-    {"name" : "Akers", "htmlName": "The%20Edge%20at%20Akers"},
-    {"name": "Case", "htmlName": "South%20Pointe%20at%20Case"},
-    {"name": "Landon", "htmlName": "Heritage%20Commons%20at%20Landon"},
-    {"name": "Shaw", "htmlName": "The%20Vista%20at%20Shaw"},
-    {"name": "SnyPhi", "htmlName": "The%20Gallery%20at%20Snyder%20Phillips"}
+    {"name": "Brody",  "slug": "brody-square"},
+    {"name": "Akers",  "slug": "the-edge-at-akers"},
+    {"name": "Case",   "slug": "south-pointe-at-case"},
+    {"name": "Landon", "slug": "heritage-commons-at-landon"},
+    {"name": "Shaw",   "slug": "the-vista-at-shaw"},
+    {"name": "SnyPhi", "slug": "the-gallery-at-synderphillips"},
 ]
-
-def getDiningHall(dh, whatday):
-    response = requests.get(f"https://eatatstate.msu.edu/menu/{dh}/all/{whatday}")
-    response.text
-    allfoods = []
+API = "https://msu.api.nutrislice.com/menu/api/weeks/school/{slug}/menu-type/{meal}/{y}/{m:02d}/{d:02d}/"
+def getDiningHall(session, slug, date):
+    """Fetch lunch+dinner for a hall via the Nutrislice JSON API.
+    Returns a list of {"food": name, "time": "Lunch"|"Dinner"} for items
+    matching winningFoodsFilter. (Old scraper returned a "time" key too,
+    so downstream code is unchanged.)
+    """
     winfoods = []
-    for line in response.text.split('\n'):
-        m = allFoodsFilter.search(line)
-        if m:
-            allfoods.append(m.groupdict())
-            if winningFoodsFilter.match(line):
-                    winfoods.append(m.groupdict())
-
-    return(winfoods)
-
+    for meal in ("lunch", "dinner"):
+        url = API.format(slug=slug, meal=meal, y=date.year, m=date.month, d=date.day)
+        try:
+            r = session.get(url, timeout=30)
+            r.raise_for_status()
+            week = r.json()
+        except (requests.RequestException, json.JSONDecodeError) as e:
+            print(f"  ! {slug}/{meal}: {e}", file=sys.stderr)
+            continue
+        day = next((d for d in week.get("days", [])
+                    if d.get("date") == date.isoformat()), None)
+        if not day:
+            continue
+        for item in day.get("menu_items", []):
+            food = item.get("food")
+            if not food:
+                continue  # station headers / section titles
+            name = food.get("name", "")
+            if winningFoodsFilter.search(name):
+                winfoods.append({"food": name, "time": meal.capitalize()})
+    return winfoods
 def send_menu_to_teams(webhook_url, menu_items):
     """
     Sends a dining menu to Teams using a ColumnSet-based table.
-    
     :param webhook_url: The MS Teams Workflow Webhook URL
-    :param menu_items: List of dicts, e.g., [{"Food": "Item", "Time": "Lunch", "Hall": "Akers"}]
+    :param menu_items: List of dicts, e.g. [{"food": "Item", "time": "Lunch", "dh": "Akers"}]
     """
-    
-    # Helper to generate a standardized row
     def create_row(col1, col2, col3, is_header=False):
         weight = "Bolder" if is_header else "Default"
-        # Optional: Add a light gray background to the header row
         style = "emphasis" if is_header else "default"
-        
         return {
             "type": "ColumnSet",
             "style": style,
@@ -83,28 +106,22 @@ def send_menu_to_teams(webhook_url, menu_items):
                     "items": [{"type": "TextBlock", "text": col3, "weight": weight, "wrap": True}]
                 }
             ],
-            "separator": not is_header  # Adds a line between data rows
+            "separator": not is_header
         }
-
-    # Build the Card Body starting with Title and Header
     card_body = [
         {
-            "type": "TextBlock", 
-            "text": "Good Foods on Campus Today", 
-            "size": "Large", 
+            "type": "TextBlock",
+            "text": "Good Foods on Campus Today",
+            "size": "Large",
             "weight": "Bolder",
             "color": "Accent"
         },
         create_row("Food", "Time", "Dining Hall", is_header=True)
     ]
-
-    # Dynamically add rows from the passed argument
     for item in menu_items:
         card_body.append(
             create_row(item.get("food", ""), item.get("time", ""), item.get("dh", ""))
         )
-
-    # Construct the full Adaptive Card payload
     payload = {
         "type": "message",
         "attachments": [
@@ -119,79 +136,52 @@ def send_menu_to_teams(webhook_url, menu_items):
             }
         ]
     }
-
     try:
         response = requests.post(webhook_url, json=payload)
         response.raise_for_status()
         print("Menu successfully posted to Teams!")
     except requests.exceptions.RequestException as e:
-        print(f"Error posting to Teams: {e}")
-
-
-def send_teams_workflow_message(webhook_url, title, message):
-    # The payload structure for modern "Workflows" typically uses Adaptive Cards
-    payload = {
-        "type": "message",
-        "attachments": [
-            {
-                "contentType": "application/vnd.microsoft.card.adaptive",
-                "content": {
-                    "type": "AdaptiveCard",
-                    "body": [
-                        {
-                            "type": "TextBlock",
-                            "size": "Medium",
-                            "weight": "Bolder",
-                            "text": title
-                        },
-                        {
-                            "type": "TextBlock",
-                            "text": message,
-                            "wrap": True
-                        }
-                    ],
-                    "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
-                    "version": "1.4"
-                }
-            }
-        ]
-    }
-
-    try:
-        response = requests.post(
-            webhook_url,
-            data=json.dumps(payload),
-            headers={'Content-Type': 'application/json'}
-        )
-        response.raise_for_status()
-        print("Successfully sent message to Teams!")
-    except requests.exceptions.RequestException as e:
-        print(f"Failed to send message: {e}")
-
-
+        # Power Automate puts the real reason in the response body — show it.
+        body = ""
+        if e.response is not None:
+            body = e.response.text[:2000]
+        print(f"Error posting to Teams: {e}\nResponse body: {body}")
+        # Fallback: some Power Automate "Post to channel" flow templates expect
+        # the adaptive card content as a JSON *string*, not an object.
+        if e.response is not None and e.response.status_code == 400:
+            try:
+                fb = json.loads(json.dumps(payload))
+                fb["attachments"][0]["content"] = json.dumps(
+                    fb["attachments"][0]["content"])
+                r2 = requests.post(webhook_url, json=fb)
+                r2.raise_for_status()
+                print("Menu successfully posted to Teams (stringified card fallback)!")
+            except requests.exceptions.RequestException as e2:
+                body2 = ""
+                if e2.response is not None:
+                    body2 = e2.response.text[:2000]
+                print(f"Stringified fallback also failed: {e2}\nResponse body: {body2}")
 def main():
-    # make paths relative to where the script is
-    mydir = os.path.dirname(__file__)
-    env = Environment(loader=FileSystemLoader(os.path.join(mydir, 'public_html/templates')))
+    env = Environment(loader=FileSystemLoader(os.path.join(mydir, 'public_html', 'templates')))
     template = env.get_template('index.html')
     markdown_template = env.get_template('markdown.html')
-    today = datetime.datetime.now().strftime("%Y-%m-%d")
-    prettyToday = datetime.datetime.now().strftime("%A, the %d of %B, %Y")
+    today = datetime.date.today()
+    prettyToday = today.strftime("%A, the %d of %B, %Y")
+    session = requests.Session()
+    session.headers.update(HEADERS)
     output = []
     for dh in diningHalls:
-        foods = getDiningHall(dh['htmlName'], today)
-        if len(foods) > 0:
-            for f in foods:
-                output.append({"dh": dh['name'], "food": f['food'], "time": f['time']})
-    
+        foods = getDiningHall(session, dh['slug'], today)
+        for f in foods:
+            output.append({"dh": dh['name'], "food": f['food'], "time": f['time']})
     html_output = template.render({"today": prettyToday, "foods": output})
-    with open(os.path.join(mydir, outputFileName), 'w') as f:
+    os.makedirs(os.path.dirname(outputFileName), exist_ok=True)
+    with open(outputFileName, 'w') as f:
         f.write(html_output)
+    print(f"Wrote {outputFileName} ({len(output)} matching items)")
     markdown_output = markdown_template.render({"today": prettyToday, "foods": output})
-    
     # on weekdays, post to teams
-    if today_idx <= 4:
+    if WEBHOOK_URL and today_idx <= 4:
         send_menu_to_teams(WEBHOOK_URL, output)
-
 if __name__ == "__main__":
     main()

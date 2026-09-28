@@ -1,0 +1,5 @@
+
+Food | Time | Dining Hall
+-----|------|------------
+{% for f in foods %}{{ f.food }} | {{ f.time | capitalize }} | {{ f.dh }}
+{% endfor %}
