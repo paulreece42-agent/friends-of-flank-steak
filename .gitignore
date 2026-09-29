@@ -1,0 +1,4 @@
+data/
+__pycache__/
+public_html/index.html
+friends_of_flank_steak_ai.env
