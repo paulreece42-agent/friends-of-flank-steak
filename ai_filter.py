@@ -38,6 +38,20 @@ SYSTEM_PROMPT = (
 
 
 def get_token():
+    """Resolve Nous credentials.
+
+    Preferred: a static NOUS_API_KEY from the environment (set in the
+    gitignored friends_of_flank_steak_ai.env, see README). Create one in
+    the Nous Portal; it survives token rotation and can be revoked
+    independently of Hermes.
+
+    Fallback: Hermes' OAuth access token in ~/.hermes/auth.json — fine
+    for ad-hoc runs while Hermes is keeping it fresh, but it rotates,
+    so don't rely on it for unattended runs.
+    """
+    key = os.environ.get("NOUS_API_KEY")
+    if key:
+        return key
     with open(AUTH_JSON) as f:
         auth = json.load(f)
     return auth["providers"]["nous"]["access_token"]
