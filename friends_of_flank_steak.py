@@ -41,12 +41,12 @@ HEADERS = {
 }
 # Nutrislice location slugs (replaces the old htmlName URL-escaped names)
 diningHalls = [
-    {"name": "Brody",  "slug": "brody-square"},
-    {"name": "Akers",  "slug": "the-edge-at-akers"},
-    {"name": "Case",   "slug": "south-pointe-at-case"},
-    {"name": "Landon", "slug": "heritage-commons-at-landon"},
     {"name": "Shaw",   "slug": "the-vista-at-shaw"},
     {"name": "SnyPhi", "slug": "the-gallery-at-synderphillips"},
+    {"name": "Akers",  "slug": "the-edge-at-akers"},
+    {"name": "Case",   "slug": "south-pointe-at-case"},
+    {"name": "Brody",  "slug": "brody-square"},
+    {"name": "Landon", "slug": "heritage-commons-at-landon"},
 ]
 API = "https://msu.api.nutrislice.com/menu/api/weeks/school/{slug}/menu-type/{meal}/{y}/{m:02d}/{d:02d}/"
 def getDiningHall(session, slug, date):
