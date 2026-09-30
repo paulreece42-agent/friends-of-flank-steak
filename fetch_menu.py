@@ -14,7 +14,7 @@ import sys
 
 import requests
 
-from friends_of_flank_steak import HEADERS, diningHalls, API
+from friends_of_flank_steak import HEADERS, diningHalls, API, HALL_ORDER
 
 mydir = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(mydir, "data")

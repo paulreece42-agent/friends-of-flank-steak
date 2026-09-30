@@ -18,6 +18,22 @@ mydir = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(mydir, "data")
 
 
+def load_webhook():
+    """MS_TEAMS_URL from the environment, else parsed from the env file
+    (same KEY=VALUE format systemd's EnvironmentFile uses)."""
+    webhook = os.getenv("MS_TEAMS_URL")
+    if webhook:
+        return webhook
+    env_file = os.path.join(mydir, "friends_of_flank_steak_ai.env")
+    if os.path.exists(env_file):
+        with open(env_file) as f:
+            for line in f:
+                line = line.strip()
+                if line.startswith("MS_TEAMS_URL="):
+                    return line.split("=", 1)[1].strip()
+    return None
+
+
 def main():
     date = datetime.date.today()
     published_path = os.path.join(DATA_DIR, f"published_{date.isoformat()}.json")
@@ -44,7 +60,7 @@ def main():
         print("Nothing to post: published item list is empty")
         return
 
-    webhook = os.getenv("MS_TEAMS_URL")
+    webhook = load_webhook()
     if not webhook:
         print("MS_TEAMS_URL not set — skipping Teams post", file=sys.stderr)
         sys.exit(1)

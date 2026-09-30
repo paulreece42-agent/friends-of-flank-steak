@@ -85,49 +85,42 @@ def getDiningHall(session, slug, date):
     return winfoods
 def send_menu_to_teams(webhook_url, menu_items):
     """
-    Sends a dining menu to Teams using a ColumnSet-based table.
+    Sends a dining menu to Teams as a compact, chat-friendly card:
+    one bold heading per dining hall, then a bullet line per item
+    ("Meal — Food"). menu_items must already be sorted by hall/meal.
     :param webhook_url: The MS Teams Workflow Webhook URL
     :param menu_items: List of dicts, e.g. [{"food": "Item", "time": "Lunch", "dh": "Akers"}]
     """
-    def create_row(col1, col2, col3, is_header=False):
-        weight = "Bolder" if is_header else "Default"
-        style = "emphasis" if is_header else "default"
-        return {
-            "type": "ColumnSet",
-            "style": style,
-            "columns": [
-                {
-                    "type": "Column",
-                    "width": "stretch",
-                    "items": [{"type": "TextBlock", "text": col1, "weight": weight, "wrap": True}]
-                },
-                {
-                    "type": "Column",
-                    "width": "stretch",
-                    "items": [{"type": "TextBlock", "text": col2, "weight": weight, "wrap": True}]
-                },
-                {
-                    "type": "Column",
-                    "width": "stretch",
-                    "items": [{"type": "TextBlock", "text": col3, "weight": weight, "wrap": True}]
-                }
-            ],
-            "separator": not is_header
-        }
-    card_body = [
+    # group items in order of first appearance (list is pre-sorted)
+    groups = []  # [(hall, [items...])]
+    for item in menu_items:
+        if not groups or groups[-1][0] != item.get("dh", ""):
+            groups.append((item.get("dh", ""), []))
+        groups[-1][1].append(item)
+
+    card_body: list = [
         {
             "type": "TextBlock",
             "text": "Good Foods on Campus Today",
             "size": "Large",
             "weight": "Bolder",
             "color": "Accent"
-        },
-        create_row("Food", "Time", "Dining Hall", is_header=True)
+        }
     ]
-    for item in menu_items:
-        card_body.append(
-            create_row(item.get("food", ""), item.get("time", ""), item.get("dh", ""))
-        )
+    for hall, items in groups:
+        card_body.append({
+            "type": "TextBlock",
+            "text": hall,
+            "weight": "Bolder",
+            "size": "Medium",
+            "separator": True
+        })
+        card_body.append({
+            "type": "TextBlock",
+            "text": "\n".join(f"• {it.get('time', '')} — {it.get('food', '')}"
+                              for it in items),
+            "wrap": True
+        })
     payload = {
         "type": "message",
         "attachments": [
