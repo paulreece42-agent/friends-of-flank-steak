@@ -20,7 +20,29 @@ All we know is how to eat flank steak
 
 ## What
 
-Yes
+Yes.
+
+Okay fine, this is just a simple, joke-y hobby project, for me and others to know what's in the local cafeteria without clicking 20 times :-)
+
+First off, no public resources were used in the making of this project - this all runs on my personal servers, was built on my own time (though, mostly by an AI agent that runs on its own, and makes commits whenever it feels like it), only very public data is polled or used, posted to normal communications channels (i.e. "lunch chat") that would otherwise exist without this project, and so on. 
+
+All that said, if anyone important has a problem with this, just tell me to knock it off - this is just a silly hobby project, made for me and a half-dozen co-workers :-P
+
+Along the way, I've tried to integrate AI, and it became an important learning experience, which I intend to pass on as an important teaching experience, about **AI guardrails**
+
+See, AIs hallucinate. We all know this. And it can't be fixed, because hallucination is more-or-less... what makes AIs useful!!
+
+Non-AI computing is very _deterministic_ - like a calculator. 2 plus 2 always equals 4. AI is different, AI is _probabilistic_ - "80% of the time, it's right every time"
+
+You can ask the same AI the same question over and over, and - (with caching layers disabled) - get significantly different answers. This flexibility is actually what makes it useful, but it also means that it will, on occasion, simply hallucinate and "make things up."
+
+The "temperature" of the model is your first go-to in controlling this behavior, lower temp, less hallucination. Never zero though, and as you get more experienced with AI, you'll find yourself turning it up as often as down! Why? Because a higher temperature means more hallucinations, yes, but this also means more _creativity_, more creative approaches to problem-solving, which often pays off, especially with agentic coding loops. It's all a trade-off.
+
+So instead, when we want our AI to be useful and not hallucinate, so we don't have someone go walk a mile for a cafeteria food item that doesn't even exist, we add _guardrails_
+
+Guardrails take the cool new AI code, and wrap it in legacy deterministic code, to filter out and omit any hallucinations. There's also other tricks here, like we constrain the context window _before_ feeding it to the AI, which helps the AI focus, and give better results.
+
+I've asked my AI agent to explain this in greater detail, step-by-step, below:
 
 ## How It Works
 
