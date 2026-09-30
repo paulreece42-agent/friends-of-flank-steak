@@ -36,7 +36,7 @@ Non-AI computing is very _deterministic_ - like a calculator. 2 plus 2 always eq
 
 You can ask the same AI the same question over and over, and - (with caching layers disabled) - get significantly different answers. This flexibility is actually what makes it useful, but it also means that it will, on occasion, simply hallucinate and "make things up."
 
-The "temperature" of the model is your first go-to in controlling this behavior, lower temp, less hallucination. Never zero though, and as you get more experienced with AI, you'll find yourself turning it up as often as down! Why? Because a higher temperature means more hallucinations, yes, but this also means more _creativity_, more creative approaches to problem-solving, which often pays off, especially with agentic coding loops. It's all a trade-off.
+The "temperature" of the model is your first go-to in controlling this behavior, lower temp, less hallucination. It can never completely eliminate it though, and as you get more experienced with AI, you'll find yourself turning it up as often as down! Why? Because a higher temperature means more hallucinations, yes, but this also means more _creativity_, more creative approaches to problem-solving, which often pays off, especially with agentic coding loops. It's all a trade-off.
 
 So instead, when we want our AI to be useful and not hallucinate, so we don't have someone go walk a mile for a cafeteria food item that doesn't even exist, we add _guardrails_
 
