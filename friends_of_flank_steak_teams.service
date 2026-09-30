@@ -1,0 +1,13 @@
+[Unit]
+Description=Post the published flank steak menu to MS Teams (stage 4)
+
+[Service]
+Type=oneshot
+User=major
+# Same env file as the main pipeline (contains the MS Teams webhook).
+EnvironmentFile=/home/major/friends-of-flank-steak/friends_of_flank_steak_ai.env
+WorkingDirectory=/home/major/friends-of-flank-steak
+ExecStart=/usr/bin/python3 post_to_teams.py
+
+[Install]
+WantedBy=multi-user.target

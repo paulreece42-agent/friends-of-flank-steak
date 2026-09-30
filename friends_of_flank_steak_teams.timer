@@ -1,0 +1,12 @@
+[Unit]
+Description=Timer for the MS Teams flank steak post (after the site update)
+
+[Timer]
+# Post to Teams at a civilised hour, a couple of hours after the
+# main pipeline (09:00 + 2h random) has updated the website.
+OnCalendar=*-*-* 11:30:00 America/Detroit
+RandomizedDelaySec=15min
+Unit=friends_of_flank_steak_teams.service
+
+[Install]
+WantedBy=default.target

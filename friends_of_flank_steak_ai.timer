@@ -2,7 +2,7 @@
 Description=Daily timer for the AI-filtered flank steak pipeline
 
 [Timer]
-OnCalendar=*-*-* 09:00:00 America/Detroit
+OnCalendar=*-*-* 05:00:00 America/Detroit
 RandomizedDelaySec=2h
 Unit=friends_of_flank_steak_ai.service
 
