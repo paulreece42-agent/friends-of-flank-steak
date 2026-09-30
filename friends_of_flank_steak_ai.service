@@ -3,12 +3,14 @@ Description=Friends of Flank Steak AI-filtered updater (3-stage pipeline)
 
 [Service]
 Type=oneshot
-User=major
-# Create a private env file (gitignored) containing the MS Teams webhook:
+# Set USER to the account the pipeline runs as; %h expands to that user's
+# home directory. Create a private env file (gitignored) there containing
+# the MS Teams webhook:
 #   echo 'MS_TEAMS_URL=https://...' > friends_of_flank_steak_ai.env
 # EnvironmentFile does NOT need systemd %% escaping - use the raw URL.
-EnvironmentFile=/home/major/friends-of-flank-steak/friends_of_flank_steak_ai.env
-WorkingDirectory=/home/major/friends-of-flank-steak
+User=USER
+EnvironmentFile=%h/friends-of-flank-steak/friends_of_flank_steak_ai.env
+WorkingDirectory=%h/friends-of-flank-steak
 ExecStart=/usr/bin/python3 fetch_menu.py
 ExecStart=/usr/bin/python3 ai_filter.py
 ExecStart=/usr/bin/python3 filter_and_publish.py

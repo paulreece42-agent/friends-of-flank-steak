@@ -4,11 +4,13 @@ Description=Friends of Flank Steak Updater
 [Service]
 Type=oneshot
 Restart=never
-User=root
+# The classic (regex-only) script writes the rendered site, so run it as a
+# user with write access to your web root (root, or a web-content group).
+User=USER
 # Set your MS Teams Workflow URL here
 # remember to "escape" '%' with '%%' cuz systemd
 #Environment="MS_TEAMS_URL=https://my-ms-teams-url/?%%dammit%%microsoft
-ExecStart=/usr/bin/python3 /var/www/html/friendsofflanksteak.com/friends_of_flank_steak.py
+ExecStart=/usr/bin/python3 /PATH/TO/friends_of_flank_steak.py
 
 [Install]
 WantedBy=multi-user.target
