@@ -30,6 +30,15 @@ def main():
 
     with open(published_path) as f:
         data = json.load(f)
+
+    # Belt and suspenders: the filename says "today" but make sure the
+    # data inside actually is today's, so a stale/clock-skew run can
+    # never post yesterday's (or any old) menu.
+    if data.get("date") != date.isoformat():
+        print(f"Refusing to post: published data is for {data.get('date')}, "
+              f"not today ({date.isoformat()})", file=sys.stderr)
+        sys.exit(1)
+
     items = data["items"]
     if not items:
         print("Nothing to post: published item list is empty")
