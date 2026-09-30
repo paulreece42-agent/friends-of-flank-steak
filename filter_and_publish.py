@@ -4,7 +4,9 @@
 Re-validates every AI pick from stage 2 against the ORIGINAL stage-1 menu
 file (exact ID match) AND a regex whitelist on the item name (so even a
 valid ID whose name doesn't look like high-value food gets dropped). Only
-survivors go to the static HTML site and MS Teams.
+survivors go to the static HTML site, and the survivor list is written to
+data/published_<date>.json for the separate Teams poster
+(post_to_teams.py) to pick up.
 """
 import datetime
 import json
@@ -14,7 +16,7 @@ import sys
 
 from jinja2 import Environment, FileSystemLoader
 
-from friends_of_flank_steak import send_menu_to_teams
+from friends_of_flank_steak import HALL_ORDER
 
 mydir = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(mydir, "data")
@@ -49,25 +51,25 @@ def main():
 
     out = [{"dh": it["hall"], "food": it["name"], "time": it["meal"]}
            for it in survived]
+    # Sort by dining-hall priority (proximity to Paul's workplace), then
+    # meal — the AI's pick order is arbitrary, ours is not.
+    out.sort(key=lambda r: (HALL_ORDER.get(r["dh"], 99), r["time"]))
+
+    # --- write survivor list for the Teams poster (separate cron) ---
+    published_path = os.path.join(DATA_DIR, f"published_{date.isoformat()}.json")
+    with open(published_path, "w") as f:
+        json.dump({"date": date.isoformat(), "items": out}, f, indent=2)
 
     # --- publish: static HTML site (same templates as the classic script) ---
     env = Environment(loader=FileSystemLoader(
         os.path.join(mydir, "public_html", "templates")))
     template = env.get_template("index.html")
-    markdown_template = env.get_template("markdown.html")
 
     pretty = date.strftime("%A, the %d of %B, %Y")
     html = template.render({"today": pretty, "foods": out})
     out_html = os.path.join(mydir, "public_html", "index.html")
     with open(out_html, "w") as f:
         f.write(html)
-
-    markdown_output = markdown_template.render({"today": pretty, "foods": out})
-
-    # --- publish: MS Teams (weekday rule carried over from the classic script) ---
-    webhook = os.getenv("MS_TEAMS_URL")
-    if webhook and date.weekday() <= 4:
-        send_menu_to_teams(webhook, out)
 
     print(f"Stage 3: {len(survived)} items survived guardrails, "
           f"{len(dropped)} dropped")

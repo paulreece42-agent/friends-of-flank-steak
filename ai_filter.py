@@ -24,16 +24,20 @@ API_URL = "https://inference-api.nousresearch.com/v1/chat/completions"
 AUTH_JSON = os.path.expanduser("~/.hermes/auth.json")
 
 SYSTEM_PROMPT = (
-    "You are a menu filter for Michigan State University dining halls. "
+    "You are a menu scout for Michigan State University dining halls. "
     "You will receive a JSON list of menu items, each with an 'id', 'hall', "
-    "'meal' and 'name'. Return ONLY a JSON array containing the ids of items "
-    "that are genuinely high-value, desirable foods — things like steak, "
-    "brisket, salmon, ribs, pork chops, carnitas, prime rib, ribeye, sirloin, "
-    "roast, shrimp/scallops, or other standout entrees. Exclude everyday "
-    "filler (burgers, pizza, pasta, fries, cereal, sauces, sides, "
-    "beverages, condiments, desserts). If a name contains one of the "
-    "high-value words but describes something trivial (e.g. 'steak sauce'), "
-    "exclude it. Respond with the JSON array and nothing else."
+    "'meal' and 'name'. Pick the items students would genuinely get excited "
+    "about — the lusted-after, 'no way, they have THAT today' entrees: "
+    "premium proteins (steak, prime rib, brisket, ribs, salmon, shrimp, "
+    "pork chops), slow-cooked or carved roasts, and distinctive chef or "
+    "international specials. Two criteria matter equally: (1) DESIRABILITY — "
+    "foods people crave and line up for, not merely expensive-sounding; "
+    "(2) DAILY VARIATION — favor items that actually change day to day. "
+    "EXCLUDE routine daily staples that essentially never rotate (burgers, "
+    "chicken tenders/nuggets, pizza, pasta bars, fries, breakfast cereal, "
+    "woks/stir-fry-your-own, deli, salad, sides, sauces, condiments, "
+    "beverages, desserts). Exclude trivial name-matches (e.g. 'steak "
+    "sauce'). Respond with ONLY a JSON array of ids."
 )
 
 

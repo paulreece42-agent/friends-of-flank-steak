@@ -14,7 +14,7 @@ import sys
 
 import requests
 
-from friends_of_flank_steak import HEADERS, diningHalls, API
+from friends_of_flank_steak import HEADERS, diningHalls, API, HALL_ORDER
 
 mydir = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(mydir, "data")
@@ -99,6 +99,10 @@ def main():
         if key not in seen:
             seen.add(key)
             unique.append(it)
+
+    # Sort by dining-hall priority (HALL_ORDER), then by meal, so the
+    # AI sees a stable, sensibly ordered list regardless of fetch order.
+    unique.sort(key=lambda it: (HALL_ORDER.get(it["hall"], 99), it["meal"]))
 
     os.makedirs(DATA_DIR, exist_ok=True)
     with open(out_path, "w") as f:
