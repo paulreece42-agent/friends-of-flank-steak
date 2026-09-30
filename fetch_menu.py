@@ -100,6 +100,10 @@ def main():
             seen.add(key)
             unique.append(it)
 
+    # Sort by dining-hall priority (HALL_ORDER), then by meal, so the
+    # AI sees a stable, sensibly ordered list regardless of fetch order.
+    unique.sort(key=lambda it: (HALL_ORDER.get(it["hall"], 99), it["meal"]))
+
     os.makedirs(DATA_DIR, exist_ok=True)
     with open(out_path, "w") as f:
         json.dump({"date": date.isoformat(), "items": unique}, f, indent=1)

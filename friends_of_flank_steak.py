@@ -49,6 +49,12 @@ diningHalls = [
     {"name": "Landon", "slug": "heritage-commons-at-landon"},
 ]
 API = "https://msu.api.nutrislice.com/menu/api/weeks/school/{slug}/menu-type/{meal}/{y}/{m:02d}/{d:02d}/"
+
+# Preferred display order of dining halls (proximity to Paul's workplace):
+# Shaw, SnyPhi, Akers, Case, Brody, Landon.
+HALL_ORDER = {dh["name"]: i for i, dh in enumerate(diningHalls)}
+
+
 def getDiningHall(session, slug, date):
     """Fetch lunch+dinner for a hall via the Nutrislice JSON API.
     Returns a list of {"food": name, "time": "Lunch"|"Dinner"} for items

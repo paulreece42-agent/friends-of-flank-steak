@@ -16,6 +16,8 @@ import sys
 
 from jinja2 import Environment, FileSystemLoader
 
+from friends_of_flank_steak import HALL_ORDER
+
 mydir = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(mydir, "data")
 
@@ -49,6 +51,9 @@ def main():
 
     out = [{"dh": it["hall"], "food": it["name"], "time": it["meal"]}
            for it in survived]
+    # Sort by dining-hall priority (proximity to Paul's workplace), then
+    # meal — the AI's pick order is arbitrary, ours is not.
+    out.sort(key=lambda r: (HALL_ORDER.get(r["dh"], 99), r["time"]))
 
     # --- write survivor list for the Teams poster (separate cron) ---
     published_path = os.path.join(DATA_DIR, f"published_{date.isoformat()}.json")
