@@ -23,6 +23,11 @@
   <link rel="stylesheet" href="css/normalize.css">
   <link rel="stylesheet" href="css/skeleton.css">
 
+  <!-- Flank steak call-out: bold + red so it jumps off the page -->
+  <style>
+    .flank-highlight { font-weight: bold; color: #c0392b; }
+  </style>
+
   <!-- Favicon
   –––––––––––––––––––––––––––––––––––––––––––––––––– -->
   <link rel="icon" type="image/png" href="images/favicon.png">
@@ -39,7 +44,7 @@
         <p><i>Friends of Flank Steak is definitely not a secret society and is in no way associated with the Illuminati.<br><br>The secrets for {{ today }} are as follows:<br></i></p>
         <table class="u-full-width">
         {% for f in foods %}
-        <tr><td>{{ f.food }}</td><td>{{ f.time | capitalize }}</td><td>{{ f.dh }}</td></tr>
+        <tr><td>{{ f.food_html | safe }}</td><td>{{ f.time | capitalize }}</td><td>{{ f.dh }}</td></tr>
         {% endfor %}
         </table>
       </div>

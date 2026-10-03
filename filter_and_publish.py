@@ -16,7 +16,7 @@ import sys
 
 from jinja2 import Environment, FileSystemLoader
 
-from friends_of_flank_steak import HALL_ORDER
+from friends_of_flank_steak import HALL_ORDER, highlight_flank_steak_html
 
 mydir = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(mydir, "data")
@@ -49,7 +49,8 @@ def main():
         else:
             survived.append(item)
 
-    out = [{"dh": it["hall"], "food": it["name"], "time": it["meal"]}
+    out = [{"dh": it["hall"], "food": it["name"], "time": it["meal"],
+            "food_html": highlight_flank_steak_html(it["name"])}
            for it in survived]
     # Sort by dining-hall priority (proximity to Paul's workplace), then
     # meal — the AI's pick order is arbitrary, ours is not.
