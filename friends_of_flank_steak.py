@@ -29,6 +29,9 @@ from jinja2 import Environment, FileSystemLoader
 today_idx = datetime.datetime.today().weekday()
 # Case-insensitive filter for high-value items. Override via argv[1].
 winningFoodsFilter = re.compile(r"steak|brisket|salmon|ribs|Carnitas|chops|sirloin|ribeye", re.I)
+# Case-insensitive matcher for "flank steak" mentions, so the site and the
+# Teams card can call them out visually wherever they appear in a menu.
+flankSteakPattern = re.compile(r"(flank\s+steaks?)", re.I)
 mydir = os.path.dirname(os.path.abspath(__file__))
 outputFileName = os.path.join(mydir, 'public_html', 'index.html')
 WEBHOOK_URL = os.getenv('MS_TEAMS_URL')
@@ -83,6 +86,20 @@ def getDiningHall(session, slug, date):
             if winningFoodsFilter.search(name):
                 winfoods.append({"food": name, "time": meal.capitalize()})
     return winfoods
+def highlight_flank_steak_html(text):
+    """HTML-escaped text with any 'flank steak' mention wrapped in a
+    highlight span (styled bold + red on the site)."""
+    from markupsafe import escape
+    return flankSteakPattern.sub(
+        r'<span class="flank-highlight">\1</span>', str(escape(str(text))))
+
+
+def highlight_flank_steak_markdown(text):
+    """Plain text with any 'flank steak' mention wrapped in **bold**
+    for Adaptive Cards / Teams markdown."""
+    return flankSteakPattern.sub(r'**\1**', str(text))
+
+
 def send_menu_to_teams(webhook_url, menu_items):
     """
     Sends a dining menu to Teams as a compact, chat-friendly card:
@@ -117,7 +134,8 @@ def send_menu_to_teams(webhook_url, menu_items):
         })
         card_body.append({
             "type": "TextBlock",
-            "text": "\n".join(f"• {it.get('time', '')} — {it.get('food', '')}"
+            "text": "\n".join(f"• {it.get('time', '')} — "
+                              + highlight_flank_steak_markdown(it.get('food', ''))
                               for it in items),
             "wrap": True
         })
@@ -172,7 +190,8 @@ def main():
     for dh in diningHalls:
         foods = getDiningHall(session, dh['slug'], today)
         for f in foods:
-            output.append({"dh": dh['name'], "food": f['food'], "time": f['time']})
+            output.append({"dh": dh['name'], "food": f['food'], "time": f['time'],
+                           "food_html": highlight_flank_steak_html(f['food'])})
     html_output = template.render({"today": prettyToday, "foods": output})
     os.makedirs(os.path.dirname(outputFileName), exist_ok=True)
     with open(outputFileName, 'w') as f:
