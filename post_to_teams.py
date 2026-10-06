@@ -65,7 +65,10 @@ def main():
         print("MS_TEAMS_URL not set — skipping Teams post", file=sys.stderr)
         sys.exit(1)
 
-    send_menu_to_teams(webhook, items)
+    # Post in REVERSE order relative to the website: on a phone, Teams
+    # is scrolled bottom-up, so the card lists halls/meal items in the
+    # opposite direction of the top-down site layout.
+    send_menu_to_teams(webhook, list(reversed(items)))
     print(f"Posted {len(items)} items to Teams")
 
 
