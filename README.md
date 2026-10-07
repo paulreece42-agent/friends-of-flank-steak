@@ -92,6 +92,6 @@ The AI never writes HTML, never touches the webhook, and never talks to anything
 
 Like everything AI, if you code something by lunch, it's probably obsolete by dinner
 
-By the time I wrote this, "system one" AIs (like Daniel Kahneman's "Thinking, Fast and Slow" "system one") have come out, like Jev and Clef (open source) have come out, which are intended for exactly this sort of "quick decision" use case, and are orders of magnitude faster/cheaper than the sort of general-purpose models I'm using, here
+By the time I wrote this, "system one" AIs (like Daniel Kahneman's "Thinking, Fast and Slow" "system one") have come out, like Jev and Clef (open source), which are intended for exactly this sort of "quick decision" use case, and are orders of magnitude faster/cheaper than the sort of general-purpose models I'm using, here
 
 Running the inference on this costs me only pennies per month, so I'm not planning to rewrite it quickly for that, but if you wanted to do this for say, every cafeteria in the world, every day - Jev/Clef would probably be the way to go :-) 
