@@ -4,7 +4,9 @@ Description=Post the published flank steak menu to MS Teams (stage 4)
 [Service]
 Type=oneshot
 # Same env file as the main pipeline (contains the MS Teams webhook).
-User=USER
+# No User= here: this is a *user* unit, so it already runs as the login
+# user, and User= is not a valid directive in user mode (it makes systemd
+# fail the start with 217/USER if it names an unknown account).
 EnvironmentFile=%h/friends-of-flank-steak/friends_of_flank_steak_ai.env
 WorkingDirectory=%h/friends-of-flank-steak
 ExecStart=/usr/bin/python3 post_to_teams.py
